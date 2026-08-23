@@ -77,13 +77,27 @@ export function PreGameBreathingScreen() {
 
   // Ensure voices are loaded
   useEffect(() => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+    window.speechSynthesis.getVoices();
+    const handleVoicesChanged = () => {
       window.speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices();
-      };
-    }
+    };
+    window.speechSynthesis.addEventListener("voiceschanged", handleVoicesChanged);
+
+    return () => {
+      window.speechSynthesis.removeEventListener("voiceschanged", handleVoicesChanged);
+    };
   }, []);
+
+  // Leaving mid-session (nav menu, back button, refresh) used to leave the
+  // narrator talking over whatever screen came next.
+  useEffect(
+    () => () => {
+      window.speechSynthesis?.cancel();
+    },
+    []
+  );
 
   // Auto-start the countdown after a short delay
   useEffect(() => {

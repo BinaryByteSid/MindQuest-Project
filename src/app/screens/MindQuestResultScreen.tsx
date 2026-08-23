@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router";
 import {
@@ -18,9 +19,24 @@ import { getMindQuestSession } from "../mindquest/session";
 export function MindQuestResultScreen() {
   const location = useLocation();
   const navigate = useNavigate();
-  const session = getMindQuestSession();
-  const level3State = location.state || {};
-  const anxietyScore: number = level3State.anxietyScore ?? session.level3.anxietyScore;
+  const session = useMemo(() => getMindQuestSession(), []);
+  const level3State = (location.state ?? {}) as {
+    anxietyScore?: number;
+    anxietyBand?: "low" | "moderate" | "high";
+  };
+
+  // With neither router state nor a finished session, this screen used to render
+  // the default 50 / "moderate" as if it were a real result. Send them to play instead.
+  const hasResult = level3State.anxietyScore != null || session.level3.completed;
+
+  useEffect(() => {
+    if (!hasResult) navigate("/mindquest", { replace: true });
+  }, [hasResult, navigate]);
+
+  const anxietyScore: number = Math.min(
+    100,
+    Math.max(0, Math.round(level3State.anxietyScore ?? session.level3.anxietyScore))
+  );
   const anxietyBand: "low" | "moderate" | "high" =
     level3State.anxietyBand ?? session.level3.anxietyBand;
 
@@ -99,6 +115,8 @@ export function MindQuestResultScreen() {
 
   const colors = getColorClasses(anxietyResult.color);
 
+  if (!hasResult) return null;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-blue-50 to-purple-50 p-6">
       {/* Confetti Effect */}
@@ -113,7 +131,9 @@ export function MindQuestResultScreen() {
               top: -20,
             }}
             animate={{
-              y: [0, window.innerHeight],
+              // "100vh" rather than window.innerHeight: it tracks viewport
+              // resizes and does not read window during render.
+              y: [0, "100vh"],
               x: [0, (Math.random() - 0.5) * 100],
               rotate: [0, 360],
               opacity: [1, 0],
@@ -188,14 +208,17 @@ export function MindQuestResultScreen() {
 
         {/* Visual Meter */}
         <div className="relative">
-          <div className="h-8 bg-gradient-to-r from-green-200 via-yellow-200 to-red-200 rounded-full overflow-hidden">
-            <motion.div
-              className={`absolute top-0 left-0 h-full w-2 bg-white border-2 border-neutral-800 rounded-full shadow-lg`}
-              initial={{ left: "0%" }}
-              animate={{ left: `${calmScore}%` }}
-              transition={{ delay: 1.2, duration: 1, type: "spring" }}
-            />
-          </div>
+          {/* Gradient runs red -> green to match the labels below it. It used to
+              run green -> red, so a calm result parked its marker on red. */}
+          <div className="h-8 bg-gradient-to-r from-red-200 via-yellow-200 to-green-200 rounded-full" />
+          {/* The marker sits outside the bar (which used to clip it) and is
+              clamped so it stays visible at a 0 or 100 score. */}
+          <motion.div
+            className="absolute top-0 h-8 w-2 -translate-x-1/2 rounded-full border-2 border-neutral-800 bg-white shadow-lg"
+            initial={{ left: "50%" }}
+            animate={{ left: `${Math.min(97, Math.max(3, calmScore))}%` }}
+            transition={{ delay: 1.2, duration: 1, type: "spring" }}
+          />
           <div className="flex justify-between mt-2 text-xs text-neutral-500">
             <span>High Anxiety</span>
             <span>Low Anxiety</span>
@@ -252,10 +275,14 @@ export function MindQuestResultScreen() {
 
           {/* Achievement */}
           <div className="flex flex-col items-center">
+            {/* Was passing `level` (not a prop) and no `unlocked`, so the badge
+                the copy calls a "New Badge!" rendered greyed out and Locked. */}
             <AchievementBadge
               title="Mind Explorer"
-              level="gold"
-              icon={<Brain className="w-6 h-6 text-yellow-600" />}
+              description="Finished all 3 quest levels"
+              type="gold"
+              icon="🧠"
+              unlocked
             />
             <p className="text-xs text-neutral-500 mt-2">New Badge!</p>
           </div>
@@ -313,6 +340,15 @@ export function MindQuestResultScreen() {
               Path mistakes {session.level3.pathMistakes}, sprint avg response {session.level3.rhythmAvgOffsetMs}ms, anxiety {session.level3.anxietyScore}/100
             </p>
           </div>
+          {session.level3.hintUsed && (
+            <div className="rounded-2xl bg-amber-50 border border-amber-200 p-3">
+              <p className="text-sm text-amber-900">
+                You revealed the Path Finder solution during this run, so the
+                anxiety index above is likely lower than a solo attempt. Replay
+                without the hint for a cleaner reading.
+              </p>
+            </div>
+          )}
         </div>
       </motion.div>
 

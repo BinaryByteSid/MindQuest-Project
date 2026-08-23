@@ -107,6 +107,8 @@ export function Level3StressMode() {
   const [phase, setPhase] = useState<Phase>("path");
   const [blockedCells, setBlockedCells] = useState<Set<string>>(new Set());
   const [showAnswerPath, setShowAnswerPath] = useState(false);
+  // Sticky: toggling the hint back off does not un-see the solution.
+  const [hintUsed, setHintUsed] = useState(false);
 
   const [position, setPosition] = useState<Cell>(START_CELL);
   const [visited, setVisited] = useState<Set<string>>(new Set([keyOf(START_CELL)]));
@@ -237,7 +239,28 @@ export function Level3StressMode() {
 
   const computedAnxiety = useMemo(() => {
     const pathPenalty = Math.min(40, pathMistakes * 6 + Math.max(0, pathSteps - 12) * 1.5);
-    const sprintPenalty = Math.min(45, rhythmAvgOffsetMs / 8 + rhythmVarianceMs / 20 + sprintMisses * 2);
+
+    // Reaction penalty is measured from a 300ms floor (nobody beats simple
+    // choice-reaction time by much) rather than from zero, so being fast is
+    // actually rewarded instead of merely being less slow.
+    const reactionPenalty = clamp((rhythmAvgOffsetMs - 300) / 45, 0, 22);
+
+    // Consistency uses the standard deviation, not the variance. The variance is
+    // in ms-squared: an ordinary 80ms spread is 6400, and the old
+    // `rhythmVarianceMs / 20` term alone contributed 320 points. That pinned the
+    // sprint half of the score to its 45-point cap for every player, which in
+    // turn made the "low" band (<= 33) impossible to reach — flawless play still
+    // scored 45 / moderate.
+    const rhythmSd = Math.sqrt(Math.max(0, rhythmVarianceMs));
+    const consistencyPenalty = clamp(rhythmSd / 70, 0, 11);
+
+    const missPenalty = Math.min(14, sprintMisses * 4);
+
+    const sprintPenalty = Math.min(
+      45,
+      reactionPenalty + consistencyPenalty + missPenalty
+    );
+
     const raw = Math.round(pathPenalty + sprintPenalty + pathTimeoutPenalty);
     const anxietyScore = clamp(raw, 0, 100);
 
@@ -263,6 +286,7 @@ export function Level3StressMode() {
         rhythmVarianceMs,
         anxietyScore: computedAnxiety.anxietyScore,
         anxietyBand: computedAnxiety.anxietyBand,
+        hintUsed,
         completed: true,
       },
     });
@@ -282,6 +306,7 @@ export function Level3StressMode() {
     rhythmAvgOffsetMs,
     rhythmVarianceMs,
     computedAnxiety,
+    hintUsed,
     navigate,
   ]);
 
@@ -302,7 +327,12 @@ export function Level3StressMode() {
 
           <div className="mt-4 flex items-center gap-2">
             <button
-              onClick={() => setShowAnswerPath((prev) => !prev)}
+              onClick={() =>
+                setShowAnswerPath((prev) => {
+                  if (!prev) setHintUsed(true);
+                  return !prev;
+                })
+              }
               className="px-3 py-2 text-sm rounded-xl bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50"
             >
               {showAnswerPath ? "Hide Answer Path" : "Show Answer Path"}

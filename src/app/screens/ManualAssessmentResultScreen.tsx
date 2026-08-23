@@ -1,6 +1,11 @@
+import { useEffect } from "react";
 import { motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router";
 import { AlertTriangle, ArrowLeft, ClipboardCheck, ShieldCheck } from "lucide-react";
+
+/** Guards against out-of-range scores arriving through router state. */
+const clampScore = (value: number, max: number) =>
+  Number.isFinite(value) ? Math.min(max, Math.max(0, Math.round(value))) : 0;
 
 type Severity = "minimal" | "mild" | "moderate" | "moderately-severe" | "severe";
 
@@ -29,25 +34,46 @@ export function ManualAssessmentResultScreen() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const phqScore = Number(location.state?.phqScore ?? 0);
-  const gadScore = Number(location.state?.gadScore ?? 0);
+  const state = location.state as
+    | { phqScore?: number; gadScore?: number; phq9Item?: number }
+    | null;
+
+  // Landing here directly (refresh, bookmark, back button) used to render a
+  // fabricated 0 / 0 "low risk" report. Send the user to the questionnaire instead.
+  const hasResult = state != null && typeof state.phqScore === "number";
+
+  useEffect(() => {
+    if (!hasResult) navigate("/manual-assessment", { replace: true });
+  }, [hasResult, navigate]);
+
+  const phqScore = clampScore(Number(state?.phqScore ?? 0), 27);
+  const gadScore = clampScore(Number(state?.gadScore ?? 0), 21);
+  const phq9Item = clampScore(Number(state?.phq9Item ?? 0), 3);
 
   const phqSeverity = getPhqSeverity(phqScore);
   const gadSeverity = getGadSeverity(gadScore);
 
+  // PHQ-9 item 9 asks about thoughts of being better off dead or of self-harm.
+  // Standard scoring escalates on ANY non-zero answer, regardless of the total:
+  // someone can answer "nearly every day" here and still total only 3 points.
+  const selfHarmFlag = phq9Item > 0;
+
   const overallRisk =
-    phqScore >= 20 || gadScore >= 15
+    selfHarmFlag || phqScore >= 20 || gadScore >= 15
       ? "high"
       : phqScore >= 10 || gadScore >= 10
       ? "moderate"
       : "low";
 
-  const recommendation =
-    overallRisk === "high"
-      ? "Please seek professional support soon. If you feel unsafe, contact emergency support immediately."
-      : overallRisk === "moderate"
-      ? "Consider speaking with a mental health professional for a full evaluation and support plan."
-      : "Your scores are in a lower range. Continue self-care and monitor changes over time.";
+  const recommendation = selfHarmFlag
+    ? "You reported thoughts of self-harm or of being better off dead. Please talk to someone today — a helpline below, a doctor, or someone you trust. You do not have to handle this alone."
+    : overallRisk === "high"
+    ? "Please seek professional support soon. If you feel unsafe, contact emergency support immediately."
+    : overallRisk === "moderate"
+    ? "Consider speaking with a mental health professional for a full evaluation and support plan."
+    : "Your scores are in a lower range. Continue self-care and monitor changes over time.";
+
+  if (!hasResult) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
@@ -70,6 +96,47 @@ export function ManualAssessmentResultScreen() {
             Based only on PHQ-9 and GAD-7 questionnaire scoring.
           </p>
         </motion.div>
+
+        {/* Item-9 escalation: shown above the scores, because a positive answer
+            here matters more than either total. */}
+        {selfHarmFlag && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 rounded-3xl border-2 border-red-300 bg-red-50 p-6 shadow-lg"
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-6 w-6 shrink-0 text-red-600" />
+              <div>
+                <h2 className="text-lg font-semibold text-red-900">
+                  Please reach out today
+                </h2>
+                <p className="mt-2 text-sm text-red-900">
+                  Your answer to question 9 mentions thoughts of self-harm or of being
+                  better off dead. That matters more than any score on this page, and it
+                  is worth talking to someone about right now.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <a
+                    href="tel:14416"
+                    className="rounded-full bg-red-600 px-4 py-3 text-center font-semibold text-white"
+                  >
+                    Call Tele-MANAS (14416)
+                  </a>
+                  <a
+                    href="tel:18005990019"
+                    className="rounded-full border border-red-300 bg-white px-4 py-3 text-center font-semibold text-red-800"
+                  >
+                    Call KIRAN (1800-599-0019)
+                  </a>
+                </div>
+                <p className="mt-3 text-xs text-red-800">
+                  Both lines are free, confidential, and open 24/7.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         <div className="grid sm:grid-cols-2 gap-4 mt-6">
           <div className="bg-white rounded-3xl p-6 shadow-lg border border-neutral-100">

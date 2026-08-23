@@ -21,6 +21,12 @@ export type Level3Stats = {
   rhythmVarianceMs: number;
   anxietyScore: number;
   anxietyBand: "low" | "moderate" | "high";
+  /**
+   * True when the player revealed the Path Finder solution. The route is meant
+   * to measure planning under pressure, so a revealed answer makes the anxiety
+   * score an underestimate — the result screen says so rather than hiding it.
+   */
+  hintUsed: boolean;
   completed: boolean;
 };
 
@@ -56,6 +62,7 @@ const defaultSession = (): MindQuestSession => ({
     rhythmVarianceMs: 0,
     anxietyScore: 50,
     anxietyBand: "moderate",
+    hintUsed: false,
     completed: false,
   },
 });

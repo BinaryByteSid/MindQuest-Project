@@ -26,6 +26,13 @@ export function Level1CalmMode() {
   const [roundJustCleared, setRoundJustCleared] = useState(false);
   const revealTimeoutsRef = useRef<number[]>([]);
   const playTokenRef = useRef(0);
+  // Kept out of revealTimeoutsRef: playSequence() clears that array, so parking
+  // the round-advance timer there let "Replay sequence" cancel the next round
+  // and freeze the game with every button disabled.
+  const roundTimerRef = useRef<number | null>(null);
+  // Hit total at the start of the current round, so a replay after a miss
+  // re-scores from that baseline instead of stacking hits for the same symbols.
+  const roundStartHitsRef = useRef(0);
 
   const currentLength = useMemo(() => Math.min(2 + round, 6), [round]);
   const progress = (Math.min(round - 1, roundGoal) / roundGoal) * 100;
@@ -67,10 +74,23 @@ export function Level1CalmMode() {
     const nextSequence = randomSequence(currentLength);
     setSequence(nextSequence);
     setNotice("");
+    setFocusHits((current) => {
+      roundStartHitsRef.current = current;
+      return current;
+    });
     playSequence(nextSequence);
   }, [round, currentLength, playSequence]);
 
-  useEffect(() => clearPlaybackTimers, [clearPlaybackTimers]);
+  useEffect(
+    () => () => {
+      clearPlaybackTimers();
+      if (roundTimerRef.current !== null) {
+        window.clearTimeout(roundTimerRef.current);
+        roundTimerRef.current = null;
+      }
+    },
+    [clearPlaybackTimers]
+  );
 
   useEffect(() => {
     if (phase !== "complete") return;
@@ -109,17 +129,20 @@ export function Level1CalmMode() {
         }
         setRoundJustCleared(true);
         setNotice(`Round ${round} complete. Loading next round...`);
-        const nextRoundTimer = window.setTimeout(() => {
+        roundTimerRef.current = window.setTimeout(() => {
+          roundTimerRef.current = null;
           setRound((prev) => prev + 1);
           setRoundJustCleared(false);
           setNotice("");
         }, 450);
-        revealTimeoutsRef.current.push(nextRoundTimer);
       }
       return;
     }
 
     setFocusMisses((prev) => prev + 1);
+    // The replay restarts the round from step 1, so roll hits back to where the
+    // round began. Otherwise repeated misses inflate the hit count without limit.
+    setFocusHits(roundStartHitsRef.current);
     setNotice("Missed. Replaying sequence...");
     playSequence(sequence);
   };
@@ -192,7 +215,7 @@ export function Level1CalmMode() {
         <div className="mt-3 text-center">
           <button
             onClick={() => playSequence(sequence)}
-            disabled={phase === "complete" || sequence.length === 0}
+            disabled={phase === "complete" || roundJustCleared || sequence.length === 0}
             className="text-sm text-blue-700 underline disabled:text-neutral-400"
           >
             Replay sequence

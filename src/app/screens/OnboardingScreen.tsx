@@ -9,14 +9,25 @@ export function OnboardingScreen() {
   const [floatingHearts, setFloatingHearts] = useState<number[]>([]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    // The nested removal timers used to outlive the component; collect them so
+    // unmounting mid-cycle cannot fire setState on an unmounted screen.
+    const removalTimers = new Set<number>();
+
+    const interval = window.setInterval(() => {
       setFloatingHearts((prev) => [...prev, Date.now()]);
-      setTimeout(() => {
+
+      const timer = window.setTimeout(() => {
+        removalTimers.delete(timer);
         setFloatingHearts((prev) => prev.slice(1));
       }, 3000);
+      removalTimers.add(timer);
     }, 2000);
 
-    return () => clearInterval(interval);
+    return () => {
+      window.clearInterval(interval);
+      removalTimers.forEach((timer) => window.clearTimeout(timer));
+      removalTimers.clear();
+    };
   }, []);
 
   return (

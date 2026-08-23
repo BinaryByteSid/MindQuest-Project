@@ -64,6 +64,11 @@ export function ManualAssessmentScreen() {
     }
   };
 
+  const firstUnanswered = useMemo(
+    () => questions.findIndex((q) => typeof answers[q.id] !== "number"),
+    [answers]
+  );
+
   const submit = () => {
     if (answeredCount !== questions.length) return;
 
@@ -79,6 +84,11 @@ export function ManualAssessmentScreen() {
       state: {
         phqScore,
         gadScore,
+        // PHQ-9 item 9 is the self-harm / suicidal-ideation item. It is carried
+        // separately because clinical scoring escalates on ANY non-zero answer
+        // here, independent of the total score.
+        phq9Item: answers.phq9 ?? 0,
+        completedAt: Date.now(),
       },
     });
   };
@@ -175,6 +185,28 @@ export function ManualAssessmentScreen() {
             </button>
           )}
         </div>
+
+        {/* Without this, reaching the last question with gaps leaves the submit
+            button greyed out and no way to tell which answers are missing. */}
+        {firstUnanswered !== -1 && index === questions.length - 1 && (
+          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 flex items-center justify-between gap-3">
+            <span>
+              {questions.length - answeredCount} question
+              {questions.length - answeredCount === 1 ? "" : "s"} still unanswered.
+            </span>
+            <button
+              onClick={() => setIndex(firstUnanswered)}
+              className="shrink-0 rounded-full bg-amber-600 px-4 py-1.5 font-semibold text-white"
+            >
+              Go to Q{firstUnanswered + 1}
+            </button>
+          </div>
+        )}
+
+        <p className="mt-6 pb-8 text-xs text-neutral-500">
+          PHQ-9 and GAD-7 are validated screening questionnaires. This tool does not
+          provide a diagnosis. If you are in immediate danger, call Tele-MANAS on 14416.
+        </p>
       </div>
     </div>
   );

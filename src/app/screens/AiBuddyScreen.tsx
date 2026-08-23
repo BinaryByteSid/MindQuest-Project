@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router"; // change to "react-router-dom" if that's what your app uses
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { Mic, PhoneOff, ArrowLeft } from "lucide-react";
@@ -19,6 +19,14 @@ export default function AiBuddyScreen() {
 function AiBuddyContent() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  // The permission stream has to be released explicitly, otherwise the browser
+  // keeps showing the "recording" indicator after the user leaves this screen.
+  const micStreamRef = useRef<MediaStream | null>(null);
+
+  const releaseMic = useCallback(() => {
+    micStreamRef.current?.getTracks().forEach((track) => track.stop());
+    micStreamRef.current = null;
+  }, []);
 
   const conversation = useConversation({
     onConnect: () => setError(null),
@@ -41,22 +49,50 @@ function AiBuddyContent() {
       setError("Missing ElevenLabs agent ID. Add VITE_ELEVENLABS_AGENT_ID to your .env file.");
       return;
     }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError(
+        "This browser cannot access the microphone. Try Chrome, Edge, or Safari over HTTPS."
+      );
+      return;
+    }
     try {
       // Mic permission must be requested before starting the session
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      conversation.startSession({
+      micStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+      await conversation.startSession({
         agentId: AGENT_ID,
         connectionType: "webrtc",
       });
     } catch (err) {
       console.error(err);
-      setError("Microphone access is needed to talk to your AI Buddy.");
+      releaseMic();
+      const denied =
+        err instanceof DOMException &&
+        (err.name === "NotAllowedError" || err.name === "SecurityError");
+      setError(
+        denied
+          ? "Microphone access is needed to talk to your AI Buddy. Allow it in your browser's address bar, then try again."
+          : "Could not start the conversation. Check your connection and try again."
+      );
     }
-  }, [conversation]);
+  }, [conversation, releaseMic]);
 
   const endConversation = useCallback(() => {
     conversation.endSession();
-  }, [conversation]);
+    releaseMic();
+  }, [conversation, releaseMic]);
+
+  // Navigating away mid-call left the WebRTC session open and the mic hot.
+  const conversationRef = useRef(conversation);
+  conversationRef.current = conversation;
+
+  useEffect(
+    () => () => {
+      conversationRef.current?.endSession?.();
+      micStreamRef.current?.getTracks().forEach((track) => track.stop());
+      micStreamRef.current = null;
+    },
+    []
+  );
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-between px-6 py-10 bg-gradient-to-br from-teal-400 via-blue-500 to-purple-500 text-white">

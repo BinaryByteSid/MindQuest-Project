@@ -1,9 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
-import { ProgressDashboard } from "./screens/ProgressDashboard";
 import { EmergencyMode } from "./screens/EmergencyMode";
-import { DesignSystemShowcase } from "./components/DesignSystemShowcase";
-import { ComponentLibrary } from "./components/ComponentLibrary";
 import { GameStartScreen } from "./screens/GameStartScreen";
 import { Level1CalmMode } from "./screens/Level1CalmMode";
 import { Level2ChallengeMode } from "./screens/Level2ChallengeMode";
@@ -13,7 +10,24 @@ import { ManualAssessmentScreen } from "./screens/ManualAssessmentScreen";
 import { ManualAssessmentResultScreen } from "./screens/ManualAssessmentResultScreen";
 import { BreathingExerciseScreen } from "./screens/BreathingExerciseScreen";
 import { PreGameBreathingScreen } from "./screens/PreGameBreathingScreen";
-import AiBuddyScreen from "./screens/AiBuddyScreen";
+import { NotFoundScreen } from "./screens/NotFoundScreen";
+
+// Split out of the initial bundle. The dashboard pulls in recharts, and the two
+// gallery screens pull in the whole Radix + MUI surface; none of them are on the
+// path a first-time visitor takes, so they load on demand instead.
+const progressDashboard = async () => ({
+  Component: (await import("./screens/ProgressDashboard")).ProgressDashboard,
+});
+const designSystemShowcase = async () => ({
+  Component: (await import("./components/DesignSystemShowcase")).DesignSystemShowcase,
+});
+const componentLibrary = async () => ({
+  Component: (await import("./components/ComponentLibrary")).ComponentLibrary,
+});
+// The ElevenLabs SDK ships a WebRTC stack that only this one screen needs.
+const aiBuddyScreen = async () => ({
+  Component: (await import("./screens/AiBuddyScreen")).default,
+});
 
 export const router = createBrowserRouter([
   {
@@ -22,7 +36,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    Component: ProgressDashboard,
+    lazy: progressDashboard,
   },
   {
     path: "/emergency",
@@ -30,11 +44,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/design-system",
-    Component: DesignSystemShowcase,
+    lazy: designSystemShowcase,
   },
   {
     path: "/components",
-    Component: ComponentLibrary,
+    lazy: componentLibrary,
   },
   {
     path: "/mindquest",
@@ -74,6 +88,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/ai-buddy",
-    Component: AiBuddyScreen,
+    lazy: aiBuddyScreen,
+  },
+  {
+    // Catch-all: unknown URLs render the 404 screen instead of a blank page.
+    path: "*",
+    Component: NotFoundScreen,
   },
 ]);
