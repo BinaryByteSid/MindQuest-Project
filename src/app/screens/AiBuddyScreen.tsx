@@ -1,19 +1,3 @@
-          <button
-            onClick={endConversation}
-            className="w-full py-4 rounded-full bg-red-500 text-white font-semibold text-lg shadow-lg flex items-center justify-center gap-2 hover:bg-red-600 transition"
-          >
-            <PhoneOff size={20} />
-            End Conversation
-          </button>
-        )}
-        <p className="text-center text-xs text-white/70">
-          Your privacy is protected. Conversations are not stored by PsychTriage.
-        </p>
-      </div>
-    </div>
-  );
-}
-=======
 import { useCallback, useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { GoogleGenAI, Modality } from "@google/genai";
