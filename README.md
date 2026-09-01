@@ -1,242 +1,272 @@
 # PsychTriage / MindQuest
 
-PsychTriage is a mobile-first, prototype mental health triage experience with two main parts:
+A mobile-first mental health triage app for Indian youth combining **real-time AI voice counseling**, a **gamified anxiety assessment**, and **cross-session memory** — all backed by a FastAPI + MongoDB backend.
 
-1. A supportive mental-health check-in flow for mood, stress, voice input, AI chat, results, dashboarding, and emergency access.
-2. MindQuest, a gamified anxiety-assessment journey built as a 3-level game with a results screen and support handoff.
-
-The project is designed for Indian youth and young adults and uses a calm, non-judgmental visual language with strong safety messaging, reward mechanics, and reusable UI components.
-
-![Status](https://img.shields.io/badge/Status-Prototype-blue)
+![Status](https://img.shields.io/badge/Status-Active-brightgreen)
 ![React](https://img.shields.io/badge/React-18.3.1-blue)
-![Tailwind](https://img.shields.io/badge/Tailwind-v4-38bdf8)
-![TypeScript](https://img.shields.io/badge/TypeScript-Supported-3178c6)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248)
+![Gemini](https://img.shields.io/badge/Gemini-Live%20API-4285F4)
+
+---
 
 ## What this project does
 
-This app provides a guided path for someone who wants to check in on how they are feeling, understand possible stress or anxiety signals, and reach support quickly if needed.
-
-It includes:
-
-- A welcome onboarding screen that introduces the app and its safety promise.
-- A mood and stress check-in experience.
-- An optional voice input screen for recording a response.
-- An AI chat screen for conversational assessment.
-- A results screen that classifies risk and suggests next steps.
-- A dashboard for trends, streaks, and achievements.
-- An emergency screen with quick access to helplines and support guidance.
-- A MindQuest game that turns anxiety assessment into a structured, interactive journey.
-- A manual PHQ-9 + GAD-7 screening flow for traditional questionnaire-based assessment.
-- A component library and design-system showcase for developers.
-
-## Main user journeys
-
-### 1. Standard triage flow
-
-1. Onboarding at `/`
-2. Mood check-in
-3. Voice input
-4. AI chat assessment
-5. Risk result
-6. Progress dashboard
-7. Emergency support when needed
-
-### 2. MindQuest game flow
-
-1. Game start at `/mindquest`
-2. Level 1: Calm Mode at `/mindquest/level1`
-3. Level 2: Challenge Mode at `/mindquest/level2`
-4. Level 3: Stress Mode at `/mindquest/level3`
-5. MindQuest result at `/mindquest/result`
-
-### 3. Manual screening flow
-
-1. Manual assessment at `/manual-assessment`
-2. Manual assessment result at `/manual-assessment/result`
-
-### 4. Developer and design views
-
-1. Component library at `/components`
-2. Design system showcase at `/design-system`
-
-## Screen-by-screen breakdown
-
-### Onboarding
-
-The home screen introduces PsychTriage with a polished, mobile-friendly entry point. It sets the tone, explains the app’s purpose, and routes users into the core flows.
-
-### Mood check-in
-
-This screen collects a quick mood response and stress level, giving the app a simple starting signal for the rest of the assessment flow.
-
-### Voice input
-
-Users can optionally record or provide a spoken response. The screen includes waveform-style feedback and is meant to feel conversational rather than clinical.
-
-### AI chat
-
-This screen simulates a supportive conversational assessment, with message bubbles, progress indication, and a guided sequence of prompts.
-
-### Risk result
-
-The result screen summarizes the current risk level using color-coded feedback and provides personalized suggestions and next actions.
-
-### Progress dashboard
-
-The dashboard shows weekly trends, improvement signals, XP, and achievements so users can see progress over time rather than only a one-time result.
-
-### Emergency mode
-
-The emergency screen prioritizes immediate support. It exposes direct helpline actions, safety guidance, and urgent help options.
-
-### MindQuest game
-
-MindQuest is the project’s gamified assessment path. It is built to reduce friction and keep the experience engaging while still collecting meaningful signals.
-
-#### Game Start
-
-Introduces the three-stage journey and explains the approximate time required.
-
-#### Level 1: Calm Mode
-
-Focuses on breathing and gentle interaction. Users tap floating objects while following breathing cues.
-
-#### Level 2: Challenge Mode
-
-Mixes quiz questions with a memory-matching game to add moderate cognitive load.
-
-#### Level 3: Stress Mode
-
-Adds time pressure, distractions, and heightened visual urgency to simulate a stressful decision environment.
-
-#### MindQuest Result
-
-Displays the final anxiety classification, reward totals, completion stats, and recommended next actions.
-
-### Manual PHQ-9 + GAD-7 screening
-
-This flow is a traditional questionnaire path for users who need a more standard screening format.
-
-- PHQ-9 covers depression symptom frequency over the last 2 weeks.
-- GAD-7 covers anxiety symptom frequency over the last 2 weeks.
-- The result screen summarizes both scores, severity bands, and support recommendations.
-
-### Component library
-
-This route demonstrates reusable design-system components such as buttons, mood selectors, XP badges, streak counters, risk cards, achievement badges, and glass cards.
-
-### Design system showcase
-
-This route shows the project’s visual language: colors, typography, spacing, radii, shadows, and icon usage.
-
-## Routes
-
-| Route | Purpose |
-| --- | --- |
-| `/` | Onboarding |
-| `/dashboard` | Progress dashboard |
-| `/emergency` | Crisis support |
-| `/design-system` | Design tokens and UI language |
-| `/components` | Component library |
-| `/mindquest` | MindQuest start screen |
-| `/mindquest/level1` | MindQuest Calm Mode |
-| `/mindquest/level2` | MindQuest Challenge Mode |
-| `/mindquest/level3` | MindQuest Stress Mode |
-| `/mindquest/result` | MindQuest results |
-| `/manual-assessment` | PHQ-9 + GAD-7 questionnaire |
-| `/manual-assessment/result` | Questionnaire results |
-
-## Components and UI building blocks
-
-The project includes a reusable design system built around supportive, high-contrast, touch-friendly components.
-
-Key reusable pieces include:
-
-- PrimaryButton
-- MoodButton
-- XPBadge
-- StreakCounter
-- RiskCard
-- AchievementBadge
-- GlassCard
-- NavigationMenu
-
-The component library also demonstrates the project’s base UI layer from Radix and related primitives.
-
-## Design system
-
-The visual direction is calm, modern, and game-like without feeling childish.
-
-### Colors
-
-- Teal for trust and calm
-- Blue for reliability and structure
-- Purple for special features and accent state
-- Gold for XP and rewards
-- Green, amber, and red for risk signaling
-
-### Interaction style
-
-- Soft motion and entrance animations
-- Glassmorphism panels
-- Rounded cards and large tap targets
-- Mobile-first layouts
-- Clear visual feedback for status and risk
-
-### Accessibility goals
-
-- Keyboard-friendly navigation
-- High contrast color usage
-- Screen-reader-aware structure
-- Large touch targets
-- Clear state changes and feedback
-
-## Technical stack
-
-- React 18.3.1
-- React Router 7
-- Tailwind CSS v4
-- Motion for animations
-- Recharts for data visualization
-- Lucide React for icons
-- TypeScript
-- Vite for build and development
-
-## How to run
-
-```bash
-pnpm install
-pnpm dev
-pnpm build
+PsychTriage gives users a guided, private path to check in on how they are feeling, speak to an empathetic AI counselor, and get actionable support — across multiple sessions with persistent memory.
+
+### Core Features
+
+| Feature | Description |
+|---------|-------------|
+| 🎙️ **AI Voice Buddy** | Real-time voice conversation powered by **Google Gemini Live API**. The AI remembers your last session. |
+| 🧠 **Cross-Session Memory** | After every voice call, the transcript is summarized by Gemini and saved to MongoDB. The next session starts with that context. |
+| 🔐 **Google OAuth + Manual Sign-Up** | Users log in with Google One-Tap or a simple name/email form. Session memory is tied to their account. |
+| 🎮 **MindQuest Game** | 3-level gamified anxiety assessment (Calm → Challenge → Stress Mode) with XP and rewards. |
+| 📋 **Manual Screening** | PHQ-9 + GAD-7 questionnaire flow for traditional assessment. |
+| 🚨 **Emergency Mode** | One-tap access to Indian helplines (Tele-MANAS 14416, KIRAN 1800-599-0019). |
+| 📊 **Progress Dashboard** | Weekly trends, streaks, XP, and achievement badges. |
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────┐
+│         React Frontend           │
+│  (Vite + TypeScript + Tailwind)  │
+│                                  │
+│  AiBuddyScreen ──────────────────┼──► Gemini Live API (voice stream)
+│  LoginScreen   ──────────────────┼──► Google OAuth
+│  AuthContext   ──────────────────┼──► localStorage (user profile)
+└──────────┬───────────────────────┘
+           │ REST API calls
+           ▼
+┌──────────────────────────────────┐
+│       FastAPI Backend            │
+│       (Python + Motor)           │
+│                                  │
+│  POST /api/auth/google           │  Register / update user
+│  GET  /api/voice/init/{user_id}  │  Fetch memory for pre-call
+│  POST /api/voice/webhook         │  Receive transcript → Gemini summary → MongoDB
+│  GET  /api/users                 │  Debug: list all users
+└──────────┬───────────────────────┘
+           │
+           ▼
+┌──────────────────────────────────┐
+│   MongoDB Atlas (Mindquest DB)   │
+│   Collection: users              │
+│                                  │
+│   user_id, user_name, email      │
+│   last_conversation_summary      │
+│   last_important_events[]        │
+│   session_history[]              │
+│   all_important_events[]         │
+└──────────────────────────────────┘
 ```
 
-## Project structure
+---
 
-The important app code lives under `src/app`:
+## Quick Start
 
-- `src/app/screens` for end-user screens
-- `src/app/components` for shared UI and showcase pages
-- `src/app/components/design-system` for reusable product components
-- `src/app/routes.ts` for route definitions
-- `src/styles` for theme, font, and global styling
+### Prerequisites
+- Node.js 18+ and npm/pnpm
+- Python 3.10+
+- A [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account (free M0 tier is fine)
+- A [Google AI Studio](https://aistudio.google.com) API key with **Gemini Live API** access
+- A [Google Cloud Console](https://console.cloud.google.com) OAuth 2.0 Client ID
 
-## Indian context and support
+---
 
-The app is positioned around Indian mental-health support and includes local helpline references.
+### 1. Frontend Setup
 
-- Tele-MANAS: 14416
-- KIRAN: 1800-599-0019
+```bash
+# Clone the repo
+git clone https://github.com/s0ham2909/MindQuest.git
+cd MindQuest
 
-## Important note
+# Install dependencies
+npm install
 
-This project is a UI prototype and educational demonstration, not a medical diagnosis tool.
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your keys (see Environment Variables below)
 
-If someone is in immediate danger or at risk of self-harm, use emergency services or a local crisis line right away.
+# Start dev server
+npm run dev
+# App runs at http://localhost:5173
+```
 
-## Related docs
+---
 
-- [Quick Start Guide](./QUICKSTART.md)
-- [Design System](./DESIGN_SYSTEM.md)
-- [MindQuest Guide](./MINDQUEST_GUIDE.md)
-- [MindQuest Summary](./MINDQUEST_SUMMARY.md)
-- [Project Structure](./PROJECT_STRUCTURE.md)
+### 2. Backend Setup
+
+```bash
+cd backend
+
+# Create and activate a Python virtual environment
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # macOS / Linux
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit backend/.env with your MongoDB URI and Gemini API key
+
+# Start the FastAPI server
+uvicorn main:app --reload --port 8000
+# API runs at http://localhost:8000
+# Docs at   http://localhost:8000/docs
+```
+
+---
+
+## Environment Variables
+
+### Frontend — `.env` (copy from `.env.example`)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_BACKEND_URL` | ✅ | URL of the FastAPI backend (default: `http://localhost:8000`) |
+| `VITE_GOOGLE_CLIENT_ID` | ✅ | Google OAuth 2.0 Client ID from [Google Cloud Console](https://console.cloud.google.com) |
+| `VITE_GEMINI_LIVE_API_KEY` | ✅ | Gemini API key with Live API access from [AI Studio](https://aistudio.google.com/apikey) |
+| `VITE_ELEVENLABS_AGENT_ID` | ⬜ | ElevenLabs Agent ID (for future use — `VoiceTriageCall.tsx` is ready to use it) |
+
+### Backend — `backend/.env` (copy from `backend/.env.example`)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `MONGODB_URI` | ✅ | MongoDB Atlas connection string |
+| `DB_NAME` | ✅ | Database name (default: `Mindquest`) |
+| `COLLECTION_USERS` | ✅ | Collection name (default: `users`) |
+| `GEMINI_API_KEY` | ✅ | Gemini API key for **post-call transcript summarization** |
+| `ELEVENLABS_WEBHOOK_SECRET` | ⬜ | ElevenLabs webhook signature secret (optional) |
+| `PORT` | ⬜ | Port for uvicorn (default: `8000`) |
+
+> **Note:** The `VITE_GEMINI_LIVE_API_KEY` (frontend, for real-time voice) and `GEMINI_API_KEY` (backend, for text summarization) can be the same key but are kept separate so you can apply different quotas/rate limits.
+
+---
+
+## App Routes
+
+| Route | Screen | Description |
+|-------|--------|-------------|
+| `/` | Login | Google OAuth + manual sign-up entry point |
+| `/home` | Home | Personalized welcome with user profile and navigation |
+| `/ai-buddy` | AI Buddy | Real-time voice conversation with Gemini Live AI |
+| `/mindquest` | Game Start | MindQuest gamified assessment entry |
+| `/mindquest/breathing` | Pre-Game Breathing | Breathing prep before gameplay |
+| `/mindquest/level1` | Calm Mode | Level 1 — low-stress interaction |
+| `/mindquest/level2` | Challenge Mode | Level 2 — moderate cognitive load |
+| `/mindquest/level3` | Stress Mode | Level 3 — time pressure + distractions |
+| `/mindquest/result` | Game Result | XP, anxiety score, and recommendations |
+| `/manual-assessment` | PHQ-9 + GAD-7 | Traditional questionnaire screening |
+| `/manual-assessment/result` | Screening Result | Scores, severity bands, next steps |
+| `/dashboard` | Progress | Weekly trends, streaks, achievements |
+| `/emergency` | Emergency | Crisis helplines and immediate support |
+| `/breathing` | Breathing Exercise | Standalone guided breathing |
+| `/components` | Component Library | Developer UI showcase |
+| `/design-system` | Design System | Color, typography, and component tokens |
+
+---
+
+## Cross-Session Memory Flow
+
+```
+1. User opens app and starts a voice call
+        ↓
+2. Frontend: GET /api/voice/init/{user_id}
+   → Returns user_name + last_conversation_summary from MongoDB
+        ↓
+3. Gemini Live session starts with memory injected into system prompt:
+   "Last session summary: {last_conversation_summary}"
+        ↓
+4. User has a real-time voice conversation with the AI Buddy
+        ↓
+5. On "End Conversation", transcript is collected locally
+        ↓
+6. Frontend: POST /api/voice/webhook
+   → Transcript sent to FastAPI backend
+   → Gemini 2.5 Flash generates a 5-6 line mental health summary
+   → Summary + key events saved to MongoDB under users collection
+        ↓
+7. Next session starts from Step 1 with the new summary as context ♻️
+```
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS v4 |
+| Animations | Motion (Framer Motion v12) |
+| Routing | React Router v7 |
+| UI Primitives | Radix UI, Lucide Icons, shadcn/ui |
+| Voice AI | Google Gemini Live API (`gemini-3.1-flash-live-preview`) |
+| Summarization | Google Gemini 2.5 Flash (REST API) |
+| Auth | Google OAuth (`@react-oauth/google`) + JWT decode |
+| Backend | FastAPI, Python 3.10+, Uvicorn |
+| Database Driver | Motor (async MongoDB driver) |
+| Database | MongoDB Atlas |
+| Charts | Recharts |
+
+---
+
+## Project Structure
+
+```
+MindQuest/
+├── backend/
+│   ├── main.py              # FastAPI app: auth, voice init, webhook, summarization
+│   ├── requirements.txt     # Python dependencies
+│   ├── .env.example         # Backend environment variable template
+│   └── .gitignore
+│
+├── src/
+│   ├── app/
+│   │   ├── screens/
+│   │   │   ├── AiBuddyScreen.tsx         # Gemini Live real-time voice AI
+│   │   │   ├── LoginScreen.tsx           # Google OAuth + manual sign-up
+│   │   │   ├── OnboardingScreen.tsx      # Personalized home screen
+│   │   │   ├── GameStartScreen.tsx       # MindQuest game entry
+│   │   │   ├── Level1/2/3*.tsx           # Game levels
+│   │   │   ├── MindQuestResultScreen.tsx
+│   │   │   ├── ManualAssessmentScreen.tsx
+│   │   │   ├── BreathingExerciseScreen.tsx
+│   │   │   ├── EmergencyMode.tsx
+│   │   │   └── ProgressDashboard.tsx
+│   │   ├── components/
+│   │   │   ├── VoiceTriageCall.tsx   # ElevenLabs SDK component (kept for future use)
+│   │   │   ├── design-system/        # PrimaryButton, MoodButton, RiskCard, etc.
+│   │   │   └── ui/                   # Radix-based shadcn components
+│   │   ├── context/
+│   │   │   └── AuthContext.tsx        # Global auth state
+│   │   ├── App.tsx
+│   │   └── routes.ts
+│   ├── main.tsx              # App entry: GoogleOAuthProvider + AuthProvider
+│   └── styles/
+│
+├── .env.example              # Frontend environment variable template
+├── .gitignore
+├── package.json
+├── vite.config.ts
+└── index.html
+```
+
+---
+
+## Important Notes
+
+- **Not a medical tool.** This is a prototype and educational demonstration. It is not a substitute for professional mental health care.
+- **Crisis support.** If someone is in immediate danger, use emergency services or:
+  - **Tele-MANAS**: 14416 (24/7, free, 20+ languages)
+  - **KIRAN**: 1800-599-0019 (free rehabilitation support)
+
+---
+
+## License
+
+This project is open source. See [ATTRIBUTIONS.md](./ATTRIBUTIONS.md) for third-party library credits.

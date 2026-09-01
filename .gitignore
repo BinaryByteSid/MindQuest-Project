@@ -1,7 +1,12 @@
 node_modules/
 dist/
-
-# Never commit real env values
+.vite/
 .env
 .env.local
-.env.*.local
+.env.*
+!.env.example
+.DS_Store
+.vscode/
+.idea/
+coverage/
+*.log

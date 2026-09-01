@@ -1,5 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
+import { LoginScreen } from "./screens/LoginScreen";
+import { ProgressDashboard } from "./screens/ProgressDashboard";
 import { EmergencyMode } from "./screens/EmergencyMode";
 import { GameStartScreen } from "./screens/GameStartScreen";
 import { Level1CalmMode } from "./screens/Level1CalmMode";
@@ -32,7 +34,15 @@ const aiBuddyScreen = async () => ({
 export const router = createBrowserRouter([
   {
     path: "/",
-    Component: OnboardingScreen,
+    Component: LoginScreen, // The dedicated Sign-Up / Login screen is the start page
+  },
+  {
+    path: "/home",
+    Component: OnboardingScreen, // Main Home Screen after logging in
+  },
+  {
+    path: "/login",
+    Component: LoginScreen,
   },
   {
     path: "/dashboard",
