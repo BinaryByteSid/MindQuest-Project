@@ -84,7 +84,7 @@ export const VoiceTriageCall: React.FC<VoiceTriageCallProps> = ({
 
   const handleStopCall = async () => {
     try {
-      await conversation.stopSession();
+      await conversation.endSession();
     } catch (err) {
       console.error("Error stopping conversation:", err);
     }
