@@ -1,7 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router";
-import { AlertTriangle, ArrowLeft, ClipboardCheck, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ClipboardCheck, ShieldCheck, Users } from "lucide-react";
+import {
+  PHQ_AGE_NORMS,
+  PHQ_NORM_META,
+  phqPercentileBelow,
+} from "../data/assessmentNorms";
 
 /** Guards against out-of-range scores arriving through router state. */
 const clampScore = (value: number, max: number) =>
@@ -33,6 +38,8 @@ const normalizeLabel = (value: string) =>
 export function ManualAssessmentResultScreen() {
   const location = useLocation();
   const navigate = useNavigate();
+  // Optional, and only used for the comparison card — it never touches scoring.
+  const [ageGroup, setAgeGroup] = useState<string | null>(null);
 
   const state = location.state as
     | { phqScore?: number; gadScore?: number; phq9Item?: number }
@@ -72,6 +79,11 @@ export function ManualAssessmentResultScreen() {
     : overallRisk === "moderate"
     ? "Consider speaking with a mental health professional for a full evaluation and support plan."
     : "Your scores are in a lower range. Continue self-care and monitor changes over time.";
+
+  // Norm-referenced context from the project's own response dataset. This is
+  // descriptive only — severity above still comes from the clinical cutoffs.
+  const phqPercentile = phqPercentileBelow(phqScore);
+  const selectedAgeNorm = PHQ_AGE_NORMS.find((a) => a.group === ageGroup) ?? null;
 
   if (!hasResult) return null;
 
@@ -211,6 +223,106 @@ export function ManualAssessmentResultScreen() {
             This tool is for screening only and does not replace clinical diagnosis.
           </p>
         </div>
+
+        {/* Norm-referenced comparison against this project's own 244-response
+            dataset. Descriptive context only — it does not affect severity. */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-5 rounded-3xl border border-neutral-100 bg-white p-6 shadow-lg"
+        >
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-indigo-600" />
+            <h3 className="text-lg font-semibold text-neutral-800">
+              How this compares
+            </h3>
+          </div>
+
+          <p className="mt-3 text-neutral-700">
+            A PHQ-9 of <strong>{phqScore}</strong> is higher than{" "}
+            <strong>{phqPercentile}%</strong> of the {PHQ_NORM_META.sampleSize}{" "}
+            people in our survey sample.
+          </p>
+
+          <div className="mt-4">
+            <div className="relative h-3 overflow-hidden rounded-full bg-neutral-100">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-indigo-500"
+                style={{ width: `${phqPercentile}%` }}
+              />
+            </div>
+            <div className="mt-1.5 flex justify-between text-xs text-neutral-500">
+              <span>Lower than sample</span>
+              <span>Higher than sample</span>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-3 border-t border-neutral-100 pt-4 text-center">
+            <div>
+              <p className="text-lg font-semibold text-neutral-800">{phqScore}</p>
+              <p className="text-xs text-neutral-500">Your score</p>
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-neutral-800">
+                {PHQ_NORM_META.median}
+              </p>
+              <p className="text-xs text-neutral-500">Sample median</p>
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-neutral-800">
+                {PHQ_NORM_META.mean}
+              </p>
+              <p className="text-xs text-neutral-500">Sample mean</p>
+            </div>
+          </div>
+
+          <div className="mt-5 border-t border-neutral-100 pt-4">
+            <p className="text-sm font-medium text-neutral-700">
+              Compare with your age group{" "}
+              <span className="font-normal text-neutral-400">(optional)</span>
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {PHQ_AGE_NORMS.map((norm) => (
+                <button
+                  key={norm.group}
+                  onClick={() =>
+                    setAgeGroup((prev) => (prev === norm.group ? null : norm.group))
+                  }
+                  className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                    ageGroup === norm.group
+                      ? "border-indigo-500 bg-indigo-50 text-indigo-900"
+                      : "border-neutral-200 bg-white text-neutral-700 hover:border-indigo-300"
+                  }`}
+                >
+                  {norm.group}
+                </button>
+              ))}
+            </div>
+
+            {selectedAgeNorm && (
+              <p className="mt-3 text-sm text-neutral-700">
+                Among the <strong>{selectedAgeNorm.n}</strong> respondents aged{" "}
+                {selectedAgeNorm.group}, the average PHQ-9 was{" "}
+                <strong>{selectedAgeNorm.mean}</strong> (median{" "}
+                {selectedAgeNorm.median}), and {selectedAgeNorm.atOrAbove10} of them
+                scored 10 or above.
+              </p>
+            )}
+          </div>
+
+          <p className="mt-4 text-xs text-neutral-500">
+            Reference group: {PHQ_NORM_META.sampleSize} survey responses collected{" "}
+            {PHQ_NORM_META.collectedFrom}–{PHQ_NORM_META.collectedTo}. This is a
+            convenience sample, not a representative population, so treat it as
+            rough context rather than a benchmark. Your severity rating above comes
+            from the standard clinical cutoffs, not from this comparison.
+          </p>
+          <p className="mt-2 text-xs text-neutral-500">
+            GAD-7 comparison is unavailable: the survey form did not record the
+            first GAD-7 item, so its stored anxiety totals are not comparable to
+            the 7-item score shown above.
+          </p>
+        </motion.div>
 
         <div className="mt-5 grid sm:grid-cols-2 gap-3 pb-8">
           <button
