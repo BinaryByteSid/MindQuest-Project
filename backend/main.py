@@ -32,6 +32,10 @@ DB_NAME = os.getenv("DB_NAME", "Mindquest")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_SUMMARY_MODEL", "gemini-2.5-flash")
 ELEVENLABS_WEBHOOK_SECRET = os.getenv("ELEVENLABS_WEBHOOK_SECRET", "")
+# Guards /api/users. That route returns every user's conversation summaries, so
+# it stays switched OFF unless this is explicitly set — failing closed rather
+# than open, because the data it exposes is mental-health session content.
+ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -241,13 +245,32 @@ async def init_voice_session(user_id: str):
 # ROUTE 3: Admin / Debug List All Users
 # ==========================================
 @app.get("/api/users")
-async def list_all_users():
+async def list_all_users(x_admin_key: Optional[str] = Header(None, alias="x-admin-key")):
     """
-    Returns all registered users and session logs in MongoDB.
+    Admin-only roster of registered users.
+
+    This route used to be fully open. Combined with `allow_origins=["*"]`, that
+    meant anyone — including any third-party web page — could read every user's
+    name, email and conversation summaries off a public URL. Those summaries are
+    mental-health session content, so the route now requires ADMIN_API_KEY and
+    returns only non-sensitive identity fields.
     """
+    if not ADMIN_API_KEY:
+        # No key configured: stay disabled instead of silently serving the data.
+        raise HTTPException(status_code=404, detail="Not found")
+
+    if not x_admin_key or not hmac.compare_digest(x_admin_key, ADMIN_API_KEY):
+        logger.warning("Rejected /api/users request with missing or invalid admin key.")
+        raise HTTPException(status_code=401, detail="Invalid or missing admin key")
+
     db = get_database()
     try:
-        cursor = db["users"].find({}, {"_id": 0})
+        # Projection is an allow-list, not a deny-list: conversation summaries,
+        # session_history and all_important_events are never returned here.
+        cursor = db["users"].find(
+            {},
+            {"_id": 0, "user_id": 1, "user_name": 1, "created_at": 1, "last_login": 1},
+        )
         users_list = await cursor.to_list(length=100)
     except PyMongoError as e:
         logger.error(f"MongoDB error in list_all_users: {e}")

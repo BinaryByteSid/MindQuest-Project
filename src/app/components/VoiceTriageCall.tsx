@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useConversation } from "@elevenlabs/react";
 import { Mic, MicOff, Loader2, Volume2, AlertCircle, Sparkles, User, Calendar } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { getGuestUserId } from "../lib/guestId";
 
 interface VoiceTriageCallProps {
   userId?: string;
@@ -23,7 +24,9 @@ export const VoiceTriageCall: React.FC<VoiceTriageCallProps> = ({
 }) => {
   const { user } = useAuth();
 
-  const activeUserId = user?.user_id || propUserId || "user_guest";
+  // Per-browser guest id rather than a shared "user_guest" record — see
+  // src/app/lib/guestId.ts.
+  const activeUserId = user?.user_id || propUserId || getGuestUserId();
   const activeUserName = user?.user_name || "User";
 
   const [loading, setLoading] = useState<boolean>(false);

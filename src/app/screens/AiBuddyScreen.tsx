@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { GoogleGenAI, Modality } from "@google/genai";
 import { Mic, PhoneOff, ArrowLeft, Loader2, Sparkles, Save, BrainCircuit } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { getGuestUserId } from "../lib/guestId";
 
 // Dedicated key for the live conversation (kept separate from the backend summarizer key).
 // Falls back to VITE_GEMINI_API_KEY if not set, so existing setups keep working.
@@ -274,7 +275,13 @@ export default function AiBuddyScreen() {
   // call, whether this conversation should read/write cross-session memory.
   const [memoryEnabled, setMemoryEnabled] = useState<boolean>(true);
 
-  const activeUserId = user?.user_id || "user_guest";
+  // Signed-out visitors get their own browser-local id. They previously all
+  // shared "user_guest", so one guest's session summary became the next
+  // guest's "last time we spoke".
+  const guestIdRef = useRef<string | null>(null);
+  if (guestIdRef.current === null) guestIdRef.current = getGuestUserId();
+
+  const activeUserId = user?.user_id || guestIdRef.current;
   const activeUserName = user?.user_name || "User";
 
   const sessionRef = useRef<any>(null);

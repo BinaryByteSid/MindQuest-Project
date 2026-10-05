@@ -5,6 +5,21 @@ import { Heart, Sparkles, Shield, Brain, ArrowRight, User, Mail, LogIn } from "l
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../context/AuthContext";
 
+/**
+ * Deterministic id for a manually-registered account: the same email always
+ * yields the same id, on any device. FNV-1a is used only to keep the id short
+ * and URL-safe (it is interpolated into /api/voice/init/{user_id}) — it is not
+ * a security measure, and this path is not authenticated either way.
+ */
+function stableUserId(email: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < email.length; i++) {
+    hash ^= email.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return `manual_${hash.toString(36)}${email.length.toString(36)}`;
+}
+
 export function LoginScreen() {
   const navigate = useNavigate();
   const { user, loginWithGoogleToken, isLoading } = useAuth();
@@ -24,12 +39,17 @@ export function LoginScreen() {
     e.preventDefault();
     if (!nameInput.trim()) return;
 
-    // Create custom user profile
-    const customUserId = `user_${Date.now()}`;
+    // Derived from the identity, not the clock. `user_${Date.now()}` produced a
+    // brand-new id on every sign-up, so the same person on a second device — or
+    // after clearing storage — became a different MongoDB user and silently lost
+    // all cross-session memory, which is the feature this screen advertises.
+    const email =
+      emailInput.trim().toLowerCase() ||
+      `${nameInput.trim().toLowerCase().replace(/\s+/g, "")}@psychtriage.app`;
     const userProfile = {
-      user_id: customUserId,
+      user_id: stableUserId(email),
       user_name: nameInput.trim(),
-      email: emailInput.trim() || `${nameInput.toLowerCase().replace(/\s+/g, '')}@psychtriage.app`,
+      email,
     };
 
     // Register with FastAPI & MongoDB backend
