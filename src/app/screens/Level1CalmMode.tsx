@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Brain, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router";
 import { updateMindQuestSession } from "../mindquest/session";
+import { QUEST_STEPS, nextStepLabel, nextStepPath } from "../mindquest/quest";
 
 const SYMBOLS = ["🌙", "⭐", "🌿", "💧", "🔥", "⚡", "🍀", "🧠"];
 
@@ -96,7 +97,7 @@ export function Level1CalmMode() {
     if (phase !== "complete") return;
 
     updateMindQuestSession({
-      level1: {
+      flashRecall: {
         roundsCompleted: roundGoal,
         focusHits,
         focusMisses,
@@ -105,7 +106,7 @@ export function Level1CalmMode() {
     });
 
     const timer = setTimeout(() => {
-      navigate("/mindquest/level2");
+      navigate(nextStepPath("flashRecall"));
     }, 1800);
 
     return () => clearTimeout(timer);
@@ -160,7 +161,7 @@ export function Level1CalmMode() {
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-100 p-6">
       <div className="max-w-lg mx-auto">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-          <p className="text-sm text-neutral-500">Level 1 • Focus Memory</p>
+          <p className="text-sm text-neutral-500">Level 1 of {QUEST_STEPS.length} • Puzzle (working memory)</p>
           <h2 className="text-2xl font-semibold text-neutral-800">Flash Recall</h2>
           <p className="text-sm text-neutral-600 mt-2">
             No breathing or Q&A. Just pure game focus.
@@ -203,7 +204,7 @@ export function Level1CalmMode() {
             {phase === "show" && "Memorize the symbols as they appear."}
             {phase === "input" && !roundJustCleared && `Step ${inputIndex + 1} of ${sequence.length}`}
             {phase === "input" && roundJustCleared && "Nice. Preparing a new sequence."}
-            {phase === "complete" && "Great concentration. Moving to memory variants."}
+            {phase === "complete" && `Great concentration. Next: ${nextStepLabel("flashRecall")}.`}
           </p>
           {notice && <p className="text-sm text-rose-600 mt-2">{notice}</p>}
 

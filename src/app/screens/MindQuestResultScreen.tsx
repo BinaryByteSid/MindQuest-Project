@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { motion } from "motion/react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import {
   TrendingUp,
   Award,
@@ -15,30 +15,36 @@ import { XPBadge } from "../components/design-system/XPBadge";
 import { AchievementBadge } from "../components/design-system/AchievementBadge";
 import { StreakCounter } from "../components/design-system/StreakCounter";
 import { getMindQuestSession } from "../mindquest/session";
+import { computeAnxietyIndex, computeXp } from "../mindquest/scoring";
+import { QUEST_STEPS } from "../mindquest/quest";
 
 export function MindQuestResultScreen() {
-  const location = useLocation();
   const navigate = useNavigate();
   const session = useMemo(() => getMindQuestSession(), []);
-  const level3State = (location.state ?? {}) as {
-    anxietyScore?: number;
-    anxietyBand?: "low" | "moderate" | "high";
-  };
+  // One scoring function, computed from the stored telemetry — nothing is
+  // passed through router state, so a refresh shows the same result.
+  const index = useMemo(() => computeAnxietyIndex(session), [session]);
+  const fr = session.flashRecall;
+  const pz = session.puzzle;
+  const sl = session.slicing;
+  const rn = session.runner;
 
-  // With neither router state nor a finished session, this screen used to render
-  // the default 50 / "moderate" as if it were a real result. Send them to play instead.
-  const hasResult = level3State.anxietyScore != null || session.level3.completed;
+  // The runner is the last game, so its completion marks a finished run. Without
+  // it there is nothing real to show — send them to play instead of rendering a
+  // default score as if it were a result.
+  const hasResult = rn.completed;
 
   useEffect(() => {
     if (!hasResult) navigate("/mindquest", { replace: true });
   }, [hasResult, navigate]);
 
-  const anxietyScore: number = Math.min(
-    100,
-    Math.max(0, Math.round(level3State.anxietyScore ?? session.level3.anxietyScore))
-  );
-  const anxietyBand: "low" | "moderate" | "high" =
-    level3State.anxietyBand ?? session.level3.anxietyBand;
+  const anxietyScore = index.score;
+  const anxietyBand = index.band;
+  const pointsOf = (key: string) => index.components.find((c) => c.key === key)?.points ?? 0;
+  const minutesPlayed = session.finishedAt
+    ? Math.min(60, Math.max(1, Math.round((session.finishedAt - session.startedAt) / 60000)))
+    : null;
+  const pct = (v: number) => `${Math.round(v * 100)}%`;
 
   const calculateAnxietyLevel = () => {
     if (anxietyBand === "low") return { level: "Low", color: "green", emoji: ":)" };
@@ -48,13 +54,7 @@ export function MindQuestResultScreen() {
 
   const anxietyResult = calculateAnxietyLevel();
   const calmScore = 100 - anxietyScore;
-  const totalXP =
-    session.level1.focusHits * 5 +
-    Math.max(0, 60 - session.level1.focusMisses * 3) +
-    Math.max(0, 120 - session.level2.memoryMoves * 4) +
-    session.level2.memoryPairs * 15 +
-    Math.max(0, 90 - session.level3.pathMistakes * 8) +
-    Math.max(0, 120 - Math.round(session.level3.rhythmAvgOffsetMs / 8));
+  const totalXP = computeXp(session);
 
   const personalizedPlan = (() => {
     const steps: string[] = [];
@@ -65,13 +65,15 @@ export function MindQuestResultScreen() {
       steps.push("Do one preventive reset before your busiest hour.");
     }
 
-    if (session.level2.memoryMoves > 12) {
+    // Attention drift in slicing -> practise holding focus; otherwise maintain it.
+    if (pointsOf("attention") >= 8) {
       steps.push("Do one 5-minute focus block with notifications off and one clear goal.");
     } else {
       steps.push("Keep your focus strong: repeat one 5-minute attention block tomorrow.");
     }
 
-    if (session.level3.pathMistakes >= 4) {
+    // Impulsive inputs under pressure, relative to your own baseline.
+    if (pointsOf("impulsivity") >= 12) {
       steps.push("When pressure spikes, pause before acting and pick one next step only.");
     } else {
       steps.push("You handled pressure well. Reuse your focus strategy early in stressful tasks.");
@@ -202,7 +204,7 @@ export function MindQuestResultScreen() {
             {anxietyResult.level}
           </h2>
           <p className="text-neutral-600 text-sm">
-            Based on gameplay consistency, mistakes, and reaction timing
+            Based on how your play changed under time pressure, compared with your own untimed baseline
           </p>
         </div>
 
@@ -279,7 +281,7 @@ export function MindQuestResultScreen() {
                 the copy calls a "New Badge!" rendered greyed out and Locked. */}
             <AchievementBadge
               title="Mind Explorer"
-              description="Finished all 3 quest levels"
+              description={`Finished all ${QUEST_STEPS.length} quest levels`}
               type="gold"
               icon="🧠"
               unlocked
@@ -300,14 +302,14 @@ export function MindQuestResultScreen() {
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
               <Brain className="w-4 h-4 text-blue-500" />
-              <p className="font-semibold text-neutral-800">3</p>
+              <p className="font-semibold text-neutral-800">{QUEST_STEPS.length}</p>
             </div>
             <p className="text-xs text-neutral-500">Game Levels</p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
               <Zap className="w-4 h-4 text-purple-500" />
-              <p className="font-semibold text-neutral-800">5</p>
+              <p className="font-semibold text-neutral-800">{minutesPlayed ?? "—"}</p>
             </div>
             <p className="text-xs text-neutral-500">Minutes</p>
           </div>
@@ -323,33 +325,77 @@ export function MindQuestResultScreen() {
         <h3 className="text-lg font-semibold text-neutral-800 mb-4">Game Breakdown</h3>
         <div className="space-y-3">
           <div className="rounded-2xl bg-teal-50 border border-teal-100 p-3">
-            <p className="text-sm font-medium text-teal-800">Level 1: Flash Recall</p>
+            <p className="text-sm font-medium text-teal-800">Level 1: Flash Recall · Puzzle</p>
             <p className="text-sm text-neutral-700">
-              {session.level1.roundsCompleted} rounds, {session.level1.focusHits} hits, {session.level1.focusMisses} misses
+              {fr.roundsCompleted} rounds, {fr.focusHits} hits, {fr.focusMisses} misses
             </p>
           </div>
-          <div className="rounded-2xl bg-blue-50 border border-blue-100 p-3">
-            <p className="text-sm font-medium text-blue-800">Level 2: Memory Variant</p>
+          <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-3">
+            <p className="text-sm font-medium text-indigo-800">Level 2: Sliding Puzzle · Puzzle</p>
             <p className="text-sm text-neutral-700">
-              {session.level2.memoryVariantName || "Memory mode"}, {session.level2.memoryPairs} pairs in {session.level2.memoryMoves} moves
+              {!pz.completed
+                ? "Not played this run"
+                : pz.solved
+                ? `Solved in ${pz.moves} moves (best possible ${pz.optimalMoves}), ~${(pz.medianDecisionMs / 1000).toFixed(1)}s per decision`
+                : `Skipped after ${pz.moves} moves`}
             </p>
           </div>
-          <div className="rounded-2xl bg-purple-50 border border-purple-100 p-3">
-            <p className="text-sm font-medium text-purple-800">Level 3: Path + Color Sprint</p>
+          <div className="rounded-2xl bg-cyan-50 border border-cyan-100 p-3">
+            <p className="text-sm font-medium text-cyan-800">Level 3: Object Slicing</p>
             <p className="text-sm text-neutral-700">
-              Path mistakes {session.level3.pathMistakes}, sprint avg response {session.level3.rhythmAvgOffsetMs}ms, anxiety {session.level3.anxietyScore}/100
+              {sl.completed
+                ? `${sl.targetsSliced}/${sl.targetsSpawned} sliced, ${sl.hazardsSliced} bombs hit, accuracy ${pct(
+                    sl.accuracyByThird[0]
+                  )} → ${pct(sl.accuracyByThird[2])}`
+                : "Not played this run"}
             </p>
           </div>
-          {session.level3.hintUsed && (
-            <div className="rounded-2xl bg-amber-50 border border-amber-200 p-3">
-              <p className="text-sm text-amber-900">
-                You revealed the Path Finder solution during this run, so the
-                anxiety index above is likely lower than a solo attempt. Replay
-                without the hint for a cleaner reading.
-              </p>
-            </div>
-          )}
+          <div className="rounded-2xl bg-rose-50 border border-rose-100 p-3">
+            <p className="text-sm font-medium text-rose-800">Level 4: Infinite Runner</p>
+            <p className="text-sm text-neutral-700">
+              {rn.rowsPassed} barriers, {rn.collisions} hits, {rn.excessSwipes} extra swipes, median
+              reaction {rn.medianReactionMs}ms
+            </p>
+          </div>
         </div>
+      </motion.div>
+
+      {/* Transparency: what the index is actually made of. */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.52 }}
+        className="bg-white rounded-3xl p-6 mb-6 shadow-lg"
+      >
+        <h3 className="text-lg font-semibold text-neutral-800 mb-1">What drove your score</h3>
+        <p className="text-sm text-neutral-600 mb-4">
+          {index.baselineFallback
+            ? "No untimed baseline was recorded, so a typical baseline was assumed."
+            : `Compared against your own untimed error rate of ${pct(index.baselineErrorRate)}.`}
+        </p>
+        <div className="space-y-4">
+          {index.components.map((c) => (
+            <div key={c.key}>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-sm font-medium text-neutral-800">{c.label}</p>
+                <p className="text-sm tabular-nums text-neutral-600">
+                  {c.measured ? `${Math.round(c.points)} / ${c.max}` : "not measured"}
+                </p>
+              </div>
+              <div className="mt-1.5 h-2 rounded-full bg-neutral-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-teal-400 to-purple-500"
+                  style={{ width: `${(c.points / c.max) * 100}%` }}
+                />
+              </div>
+              <p className="mt-1 text-xs text-neutral-500">{c.detail}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-xs text-neutral-500">
+          These weights were set by hand for this project and have not been fitted to clinical
+          data such as GAD-7.
+        </p>
       </motion.div>
 
       <motion.div
@@ -360,7 +406,7 @@ export function MindQuestResultScreen() {
       >
         <h3 className="text-lg font-semibold text-neutral-800 mb-3">Personalized 24-Hour Plan</h3>
         <p className="text-sm text-neutral-600 mb-4">
-          Built from your memory, pathfinding, and Color Sprint gameplay data.
+          Built from your puzzle, slicing, and runner gameplay data.
         </p>
         <div className="space-y-2">
           {personalizedPlan.map((step, index) => (

@@ -5,8 +5,9 @@ import { ProgressDashboard } from "./screens/ProgressDashboard";
 import { EmergencyMode } from "./screens/EmergencyMode";
 import { GameStartScreen } from "./screens/GameStartScreen";
 import { Level1CalmMode } from "./screens/Level1CalmMode";
-import { Level2ChallengeMode } from "./screens/Level2ChallengeMode";
-import { Level3StressMode } from "./screens/Level3StressMode";
+import { Level2PuzzleMode } from "./screens/Level2PuzzleMode";
+import { Level3SlicingMode } from "./screens/Level3SlicingMode";
+import { Level4RunnerMode } from "./screens/Level4RunnerMode";
 import { MindQuestResultScreen } from "./screens/MindQuestResultScreen";
 import { ManualAssessmentScreen } from "./screens/ManualAssessmentScreen";
 import { ManualAssessmentResultScreen } from "./screens/ManualAssessmentResultScreen";
@@ -72,13 +73,18 @@ export const router = createBrowserRouter([
     path: "/mindquest/level1",
     Component: Level1CalmMode,
   },
+  // Quest order lives in mindquest/quest.ts; these paths must match it.
   {
     path: "/mindquest/level2",
-    Component: Level2ChallengeMode,
+    Component: Level2PuzzleMode,
   },
   {
     path: "/mindquest/level3",
-    Component: Level3StressMode,
+    Component: Level3SlicingMode,
+  },
+  {
+    path: "/mindquest/level4",
+    Component: Level4RunnerMode,
   },
   {
     path: "/mindquest/result",

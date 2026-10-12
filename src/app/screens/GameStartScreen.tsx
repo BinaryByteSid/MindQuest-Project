@@ -1,6 +1,10 @@
 import { motion } from "motion/react";
 import { Sparkles, Brain, Heart } from "lucide-react";
 import { useNavigate } from "react-router";
+import { QUEST_STEPS } from "../mindquest/quest";
+
+// Untimed (baseline) games get cool dots, timed (pressure) games warm ones.
+const DOT = ["bg-teal-300", "bg-blue-300", "bg-amber-300", "bg-rose-300"];
 
 export function GameStartScreen() {
   const navigate = useNavigate();
@@ -126,27 +130,29 @@ export function GameStartScreen() {
               </div>
               <div>
                 <h3 className="text-white font-medium mb-1">
-                  A Journey Through 3 Game Levels
+                  A Journey Through {QUEST_STEPS.length} Game Levels
                 </h3>
                 <p className="text-white/70 text-sm">
-                  Pure gameplay mode. No breathing prompts, no signal drill, and no Q&amp;A screens.
+                  Pure gameplay, no questionnaires. Two calm puzzles set your baseline, then two
+                  fast games show how your focus holds up under pressure.
                 </p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-white/80 text-sm">
-                <div className="w-2 h-2 rounded-full bg-teal-300" />
-                <span>Level 1: Flash Recall (focus memory)</span>
-              </div>
-              <div className="flex items-center gap-2 text-white/80 text-sm">
-                <div className="w-2 h-2 rounded-full bg-blue-300" />
-                <span>Level 2: Memory Variant Roulette (5 types)</span>
-              </div>
-              <div className="flex items-center gap-2 text-white/80 text-sm">
-                <div className="w-2 h-2 rounded-full bg-purple-300" />
-                <span>Level 3: Path Finder + Color Sprint</span>
-              </div>
+              {QUEST_STEPS.map((step, i) => (
+                <div key={step.id} className="flex items-start gap-2 text-white/80 text-sm">
+                  <div className={`w-2 h-2 mt-1.5 shrink-0 rounded-full ${DOT[i % DOT.length]}`} />
+                  <span>
+                    Level {i + 1}: {step.label}{" "}
+                    <span className="text-white/60">
+                      — {step.category !== step.label && `${step.category}, `}
+                      {step.measures}
+                      {step.timed ? " (timed)" : " (no timer)"}
+                    </span>
+                  </span>
+                </div>
+              ))}
             </div>
           </motion.div>
 
@@ -170,7 +176,7 @@ export function GameStartScreen() {
             transition={{ delay: 1.1, duration: 0.8 }}
             className="text-center text-white/60 text-sm mt-4"
           >
-            Takes ~5 minutes • Fresh memory variant every run
+            Takes ~7 minutes • Fresh puzzle and obstacle layout every run
           </motion.p>
         </motion.div>
       </div>
